@@ -211,6 +211,14 @@ function sign (num: number) {
     }
     return 1
 }
+sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function (sprite, otherSprite) {
+    sprites.destroy(otherSprite, effects.fire, 500)
+})
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
+    info.changeLifeBy(-1)
+    hasStarted = false
+    tiles.placeOnRandomTile(naut, assets.tile`tile18`)
+})
 let _dot_y = 0
 let _dot_x = 0
 let _step_x = 0
@@ -229,6 +237,7 @@ let anchored = false
 let hook: Sprite = null
 let hasStarted = false
 let projectile: Sprite = null
+let mySprite: Sprite = null
 let naut: Sprite = null
 let naut_rev_img: Image = null
 let naut_img: Image = null
@@ -419,10 +428,43 @@ naut.ay = g
 tiles.placeOnRandomTile(naut, assets.tile`tile18`)
 scene.cameraFollowSprite(naut)
 info.setLife(3)
+for (let value of tiles.getTilesByType(assets.tile`tile28`)) {
+    mySprite = sprites.create(img`
+        . . . . . . f f f f . . . . . . 
+        . . . . f f 1 1 1 1 f f . . . . 
+        . . . f b 1 1 1 1 1 1 b f . . . 
+        . . . f 1 1 1 1 1 1 1 d f . . . 
+        . . f d 1 1 1 1 1 1 1 d d f . . 
+        . . f d 1 1 1 1 1 1 d d d f . . 
+        . . f d 1 1 1 d d d d d d f . . 
+        . . f d 1 d f b d d d d b f . . 
+        . . f b d d f c d b b b c f . . 
+        . . . f 1 1 1 1 1 b b c f . . . 
+        . . . f 1 b 1 f f f f f . . . . 
+        . . . f b f c 1 1 1 b f . . . . 
+        . . . . f f 1 b 1 b f f . . . . 
+        . . . . . f b f b f f f . f . . 
+        . . . . . . f f f f f f f f . . 
+        . . . . . . . . f f f f f . . . 
+        `, SpriteKind.Enemy)
+    tiles.placeOnTile(mySprite, value)
+    tiles.setTileAt(value, assets.tile`transparency16`)
+    mySprite.vy = -100
+}
 forever(function () {
     if (cool) {
         updatePlayerSprite()
         updateGrappling()
+    }
+})
+forever(function () {
+    if (cool) {
+        if (controller.left.isPressed()) {
+            direction_x = -1
+        }
+        if (controller.right.isPressed()) {
+            direction_x = 1
+        }
     }
 })
 game.onUpdate(function () {
@@ -434,16 +476,6 @@ game.onUpdate(function () {
             info.changeLifeBy(-1)
             hasStarted = false
             tiles.placeOnRandomTile(naut, assets.tile`tile18`)
-        }
-    }
-})
-forever(function () {
-    if (cool) {
-        if (controller.left.isPressed()) {
-            direction_x = -1
-        }
-        if (controller.right.isPressed()) {
-            direction_x = 1
         }
     }
 })
@@ -506,6 +538,16 @@ game.onUpdate(function () {
                 . . . . . f f d d d c d d f . . 
                 . . . . . . f f f f f f f . . . 
                 `)
+        }
+    }
+})
+game.onUpdate(function () {
+    for (let value of sprites.allOfKind(SpriteKind.Enemy)) {
+        if (value.isHittingTile(CollisionDirection.Top)) {
+            value.vy = 100
+        }
+        if (value.isHittingTile(CollisionDirection.Bottom)) {
+            value.vy = -100
         }
     }
 })
